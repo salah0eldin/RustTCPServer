@@ -59,13 +59,10 @@ Initially, test cases running in parallel caused conflicts due to shared port us
 1. **Dynamic Port Allocation**:
    - Develop a centralized system for dynamic port assignment during testing.
 
-2. **Test Parallelism**:
-   - Further optimize the test suite to maintain parallel execution while avoiding conflicts, potentially through a custom test harness.
+2. **Logging Improvements**:
+   - Enhance logging for better debugging and monitoring of client-server interactions. (couldn't finish due to time)
 
-3. **Logging Improvements**:
-   - Enhance logging for better debugging and monitoring of client-server interactions.
-
-4. **Scalability**:
+3. **Scalability**:
    - Conduct performance evaluations under high-load scenarios and implement additional optimizations as needed.
 
 ---
