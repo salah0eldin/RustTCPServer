@@ -36,11 +36,11 @@ Initially, test cases running in parallel caused conflicts due to shared port us
 
 ### Test Suite
 1. **Sequential Execution**:
-   - Adjusted the test suite to execute tests one at a time, avoiding port conflicts.
+   - Adjusted the test suite to execute tests one at a time, avoiding port conflicts. (neglected due to long time)
 
 2. **Port Isolation**:
    - Each test case now dynamically binds to a unique port, enabling parallel execution without conflicts.
-   - Test logic was refactored to support dynamic port assignment, improving efficiency and scalability.
+   - Test logic was refactored to support dynamic port assignment, improving efficiency and scalability. (implemented)
 
 ---
 
