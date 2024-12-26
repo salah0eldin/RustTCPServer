@@ -1,4 +1,4 @@
-use crate::message::EchoMessage;
+use crate::message::{client_message, server_message, AddResponse, ClientMessage};
 use log::{error, info, warn};
 use prost::Message;
 use std::{
@@ -23,24 +23,61 @@ impl Client {
 
     pub fn handle(&mut self) -> io::Result<()> {
         let mut buffer = [0; 512];
-        // Read data from the client
-        let bytes_read = self.stream.read(&mut buffer)?;
-        if bytes_read == 0 {
-            info!("Client disconnected.");
-            return Ok(());
-        }
+        self.stream.set_nonblocking(true)?;
+        loop {
+            match self.stream.read(&mut buffer) {
+                Ok(0) => {
+                    info!("Client disconnected.");
+                    return Ok(());
+                }
+                Ok(bytes_read) => {
+                    let request = ClientMessage::decode(&buffer[..bytes_read]);
+                    assert!(request.is_ok(), "Failed to receive request",);
+                    info!("Received request from the client");
 
-        if let Ok(message) = EchoMessage::decode(&buffer[..bytes_read]) {
-            info!("Received: {}", message.content);
-            // Echo back the message
-            let payload = message.encode_to_vec();
-            self.stream.write_all(&payload)?;
-            self.stream.flush()?;
-        } else {
-            error!("Failed to decode message");
+                    match request.unwrap().message {
+                        Some(client_message::Message::AddRequest(add_request)) => {
+                            let response = AddResponse {
+                                result: add_request.a + add_request.b,
+                            };
+                            let payload = server_message::Message::AddResponse(response.clone());
+                            let mut buffer = Vec::new();
+                            payload.encode(&mut buffer);
+                            // let payload = response.encode_to_vec();
+                            self.stream.write_all(&buffer)?;
+                            self.stream.flush()?;
+                        }
+                        Some(client_message::Message::EchoMessage(echo)) => {
+                            info!("Received EchoMessage: {}", echo.content);
+                            // Echo back the message
+                            let payload = server_message::Message::EchoMessage(echo.clone());
+                            let mut buffer = Vec::new();
+                            payload.encode(&mut buffer);
+                            // let payload = response.encode_to_vec();
+                            self.stream.write_all(&buffer)?;
+                            self.stream.flush()?;
+                        }
+                        _ => panic!("Unexpected request message"),
+                    }
+                }
+                Err(ref e) if e.kind() == ErrorKind::WouldBlock => {
+                    // No data available, sleep briefly to reduce CPU usage
+                    thread::sleep(Duration::from_millis(100));
+                    continue;
+                }
+                Err(ref e)
+                    if e.kind() == ErrorKind::ConnectionReset
+                        || e.kind() == ErrorKind::ConnectionAborted =>
+                {
+                    info!("Client disconnected.");
+                    return Ok(());
+                }
+                Err(e) => {
+                    error!("Error reading from stream: {}", e);
+                    return Err(e);
+                }
+            }
         }
-
-        Ok(())
     }
 }
 
@@ -73,14 +110,17 @@ impl Server {
                 Ok((stream, addr)) => {
                     info!("New client connected: {}", addr);
 
-                    // Handle the client request
-                    let mut client = Client::new(stream);
-                    while self.is_running.load(Ordering::SeqCst) {
-                        if let Err(e) = client.handle() {
-                            error!("Error handling client: {}", e);
-                            break;
+                    // Handle the client request in a new thread
+                    let is_running = Arc::clone(&self.is_running);
+                    thread::spawn(move || {
+                        let mut client = Client::new(stream);
+                        while is_running.load(Ordering::SeqCst) {
+                            if let Err(e) = client.handle() {
+                                error!("Error handling client: {}", e);
+                                break;
+                            }
                         }
-                    }
+                    });
                 }
                 Err(ref e) if e.kind() == ErrorKind::WouldBlock => {
                     // No incoming connections, sleep briefly to reduce CPU usage

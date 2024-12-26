@@ -15,18 +15,20 @@ fn setup_server_thread(server: Arc<Server>) -> JoinHandle<()> {
     })
 }
 
-fn create_server() -> Arc<Server> {
-    Arc::new(Server::new("localhost:8080").expect("Failed to start server"))
+fn create_server(port: u32) -> Arc<Server> {
+    Arc::new(Server::new(format!("localhost:{}", port).as_str()).expect("Failed to start server"))
 }
+
 
 #[test]
 fn test_client_connection() {
+    let port = 8080;
     // Set up the server in a separate thread
-    let server = create_server();
+    let server = create_server(port.clone());
     let handle = setup_server_thread(server.clone());
 
     // Create and connect the client
-    let mut client = client::Client::new("localhost", 8080, 1000);
+    let mut client = client::Client::new("localhost", port, 1000);
     assert!(client.connect().is_ok(), "Failed to connect to the server");
 
     // Disconnect the client
@@ -45,12 +47,13 @@ fn test_client_connection() {
 
 #[test]
 fn test_client_echo_message() {
+    let port = 8081;
     // Set up the server in a separate thread
-    let server = create_server();
+    let server = create_server(port.clone());
     let handle = setup_server_thread(server.clone());
 
     // Create and connect the client
-    let mut client = client::Client::new("localhost", 8080, 1000);
+    let mut client = client::Client::new("localhost", port, 1000);
     assert!(client.connect().is_ok(), "Failed to connect to the server");
 
     // Prepare the message
@@ -93,14 +96,14 @@ fn test_client_echo_message() {
 }
 
 #[test]
-#[ignore = "please remove ignore and fix this test"]
 fn test_multiple_echo_messages() {
+    let port = 8082;
     // Set up the server in a separate thread
-    let server = create_server();
+    let server = create_server(port.clone());
     let handle = setup_server_thread(server.clone());
 
     // Create and connect the client
-    let mut client = client::Client::new("localhost", 8080, 1000);
+    let mut client = client::Client::new("localhost", port, 1000);
     assert!(client.connect().is_ok(), "Failed to connect to the server");
 
     // Prepare multiple messages
@@ -152,17 +155,17 @@ fn test_multiple_echo_messages() {
 }
 
 #[test]
-#[ignore = "please remove ignore and fix this test"]
 fn test_multiple_clients() {
+    let port = 8083;
     // Set up the server in a separate thread
-    let server = create_server();
+    let server = create_server(port.clone());
     let handle = setup_server_thread(server.clone());
 
     // Create and connect multiple clients
     let mut clients = vec![
-        client::Client::new("localhost", 8080, 1000),
-        client::Client::new("localhost", 8080, 1000),
-        client::Client::new("localhost", 8080, 1000),
+        client::Client::new("localhost", port.clone(), 1000),
+        client::Client::new("localhost", port.clone(), 1000),
+        client::Client::new("localhost", port.clone(), 1000),
     ];
 
     for client in clients.iter_mut() {
@@ -225,14 +228,14 @@ fn test_multiple_clients() {
 }
 
 #[test]
-#[ignore = "please remove ignore and fix this test"]
 fn test_client_add_request() {
+    let port = 8084;
     // Set up the server in a separate thread
-    let server = create_server();
+    let server = create_server(port.clone());
     let handle = setup_server_thread(server.clone());
 
     // Create and connect the client
-    let mut client = client::Client::new("localhost", 8080, 1000);
+    let mut client = client::Client::new("localhost", port, 1000);
     assert!(client.connect().is_ok(), "Failed to connect to the server");
 
     // Prepare the message
