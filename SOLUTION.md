@@ -1,9 +1,4 @@
 # Solution
-# Documentation of Changes to Rust Server Application
-
-## Overview
-This document provides a comprehensive summary of the modifications and enhancements made to the Rust server application for the **Embedded Recruitment Task**. The changes include fixing bugs, transitioning to a multithreaded architecture, and optimizing test execution to ensure the server operates efficiently and reliably.
-
 ---
 
 ## Key Modifications
